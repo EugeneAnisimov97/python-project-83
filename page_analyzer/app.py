@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, get_flashed_messages  # noqa: E501
-import os
 from dotenv import load_dotenv
+from datetime import date
+import os
 import psycopg2
 import validators
 
@@ -29,38 +30,60 @@ def post_main():
         return redirect(url_for('main'))
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute('INSERT INTO urls (name) VALUES (%s) RETURNING id', (url,))
-    added_url = cur.fetchone()[0]
-    conn.commit()
-    cur.close()
-    conn.close()
-    flash('Страница успешно добавлена.', 'success')
-    return redirect(url_for('show_url', url_id=added_url))
+    try:
+        cur.execute('SELECT * FROM urls WHERE name = %s', (url,))
+        already_added_url = cur.fetchone()
+        if already_added_url:
+            return redirect(url_for('show_url', url_id=already_added_url[0]))
+        today = date.today()
+        cur.execute('INSERT INTO urls (name, created_at) VALUES (%s, %s) RETURNING id', (url, today))  # noqa: E501
+        added_url = cur.fetchone()[0]
+        conn.commit()
+        flash('Страница успешно добавлена.', 'success')
+        return redirect(url_for('show_url', url_id=added_url))
+    except Exception as e:
+        flash(f'Ошибка: {str(e)}', 'error')
+        return redirect(url_for('main'))
+    finally:
+        cur.close()
+        conn.close()
 
 
 @app.route('/urls')
 def urls():
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute('SELECT * FROM urls ORDER BY created_at DESC')
-    urls = cur.fetchall()
-    cur.close()
-    conn.close()
-    return render_template('urls.html', urls=urls)
+    try:
+        cur.execute('SELECT * FROM urls ORDER BY created_at DESC')
+        urls = cur.fetchall()
+        return render_template('urls.html', urls=urls)
+    except Exception as e:
+        flash(f'Ошибка: {str(e)}', 'error')
+        return redirect(url_for('main'))
+    finally:
+        cur.close()
+        conn.close()
 
 
 @app.route('/urls/<int:url_id>')
 def show_url(url_id):
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute('SELECT * FROM urls WHERE id = %s', (url_id,))
-    url = cur.fetchone()
-    cur.close()
-    conn.close()
-    if url is None:
-        flash('Этот URL не найден.', 'error')
-        return redirect(url_for('urls'))
-    return render_template('show_url.html', url=url)
+    try:
+        cur.execute('SELECT * FROM urls WHERE id = %s', (url_id,))
+        url = cur.fetchone()
+        cur.close()
+        conn.close()
+        if url is None:
+            flash('Этот URL не найден.', 'error')
+            return redirect(url_for('urls'))
+        return render_template('show_url.html', url=url)
+    except Exception as e:
+        flash(f'Ошибка: {str(e)}', 'error')
+        return redirect(url_for('main'))
+    finally:
+        cur.close()
+        conn.close()
 
 
 if __name__ == '__main__':
