@@ -18,7 +18,14 @@
 </nav>
 
   </header>
-  
+  {% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+
+      {% for category, message in messages %}
+      <div class="alert alert-success" role="alert">{{message}}</div>
+      {% endfor %}
+  {% endif %}
+{% endwith %}
   
 
   <main class="flex-grow-1">
@@ -47,7 +54,7 @@
             </a>
           </td>
           
-          <td></td>
+          <td>{{check_urls[url[0]][6]}}</td>
           
           
           <td></td>

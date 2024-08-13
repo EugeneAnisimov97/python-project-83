@@ -39,7 +39,7 @@ def post_main():
         cur.execute('INSERT INTO urls (name, created_at) VALUES (%s, %s) RETURNING id', (url, today))  # noqa: E501
         added_url = cur.fetchone()[0]
         conn.commit()
-        flash('Страница успешно добавлена.', 'success')
+        flash('Страница успешно добавлена', 'success')
         return redirect(url_for('show_url', url_id=added_url))
     except Exception as e:
         flash(f'Ошибка: {str(e)}', 'error')
@@ -56,7 +56,13 @@ def urls():
     try:
         cur.execute('SELECT * FROM urls ORDER BY created_at DESC')
         urls = cur.fetchall()
-        return render_template('urls.html', urls=urls)
+        check_urls = {}
+        for url in urls:
+            url_id = url[0]
+            cur.execute('select * from url_checks where url_id = %s ORDER BY created_at DESC LIMIT 1', (url_id,))  # noqa: E501
+            last_check = cur.fetchone()
+            check_urls[url_id] = last_check
+        return render_template('urls.html', urls=urls, check_urls=check_urls)
     except Exception as e:
         flash(f'Ошибка: {str(e)}', 'error')
         return redirect(url_for('main'))
@@ -72,12 +78,35 @@ def show_url(url_id):
     try:
         cur.execute('SELECT * FROM urls WHERE id = %s', (url_id,))
         url = cur.fetchone()
-        cur.close()
-        conn.close()
         if url is None:
             flash('Этот URL не найден.', 'error')
             return redirect(url_for('urls'))
-        return render_template('show_url.html', url=url)
+        cur.execute('select * from url_checks where url_id = %s ORDER BY created_at DESC', (url_id,))  # noqa: E501
+        check_url = cur.fetchall()
+        return render_template('show_url.html', url=url, checks=check_url)
+    except Exception as e:
+        flash(f'Ошибка: {str(e)}', 'error')
+        return redirect(url_for('main'))
+    finally:
+        cur.close()
+        conn.close()
+
+
+@app.post('/urls/<int:url_id>/checks')
+def checks_url(url_id):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute('SELECT * FROM urls WHERE id = %s', (url_id,))
+        url = cur.fetchone()
+        if url is None:
+            flash('URL не найден!', 'error')
+            return redirect(url_for('urls'))
+        today = date.today()
+        cur.execute('INSERT INTO url_checks (url_id, created_at) VALUES (%s, %s)', (url_id, today))  # noqa: E501
+        conn.commit()
+        flash('Страница успешно проверена', 'success')
+        return redirect(url_for('show_url', url_id=url_id))
     except Exception as e:
         flash(f'Ошибка: {str(e)}', 'error')
         return redirect(url_for('main'))
@@ -87,4 +116,4 @@ def show_url(url_id):
 
 
 if __name__ == '__main__':
-    app.run()
+    app.run(debug=True)
