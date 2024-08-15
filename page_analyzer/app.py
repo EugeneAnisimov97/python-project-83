@@ -1,10 +1,11 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, get_flashed_messages
-import requests  # noqa: E501
+from flask import Flask, render_template, request, redirect, url_for, flash, get_flashed_messages  # noqa: E501
 from dotenv import load_dotenv
 from datetime import date
+from bs4 import BeautifulSoup
 import os
 import psycopg2
 import validators
+import requests
 
 load_dotenv()
 app = Flask(__name__)
@@ -35,6 +36,7 @@ def post_main():
         cur.execute('SELECT * FROM urls WHERE name = %s', (url,))
         already_added_url = cur.fetchone()
         if already_added_url:
+            flash('Страница уже существует', 'info')
             return redirect(url_for('show_url', url_id=already_added_url[0]))
         today = date.today()
         cur.execute('INSERT INTO urls (name, created_at) VALUES (%s, %s) RETURNING id', (url, today))  # noqa: E501
@@ -105,8 +107,14 @@ def checks_url(url_id):
             return redirect(url_for('urls'))
         response = requests.get(url[1])
         response.raise_for_status()
+        if response.status_code == 200:
+            soup = BeautifulSoup(response.content, 'html.parser')
+            h1 = soup.find('h1').text if soup.find('h1') else ''
+            title = soup.find('title').text if soup.find('title') else ''
+            description_tag = soup.find('meta', attrs={'name': 'description'})
+            description_content = description_tag['content'] if description_tag else ''
         today = date.today()
-        cur.execute('INSERT INTO url_checks (url_id, status_code, created_at) VALUES (%s, %s, %s)', (url_id,response.status_code, today))  # noqa: E501
+        cur.execute('INSERT INTO url_checks (url_id, status_code, h1, title, description, created_at) VALUES (%s, %s, %s, %s, %s, %s)', (url_id,response.status_code, h1, title, description_content, today))  # noqa: E501
         conn.commit()
         flash('Страница успешно проверена', 'success')
         return redirect(url_for('show_url', url_id=url_id))
