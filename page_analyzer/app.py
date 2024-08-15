@@ -29,7 +29,7 @@ def post_main():
     url = request.form.get('url')
     if not url or len(url) > 255 or not validators.url(url):
         flash('Некорректный URL', 'error')
-        return redirect(url_for('main'))
+        return render_template('index.html'), 422
     conn = get_db_connection()
     cur = conn.cursor()
     try:
@@ -103,7 +103,7 @@ def checks_url(url_id):
         cur.execute('SELECT * FROM urls WHERE id = %s', (url_id,))
         url = cur.fetchone()
         if url is None:
-            flash('Некорректный URL', 'error')
+            flash('URL не найден!', 'error')
             return redirect(url_for('urls'))
         response = requests.get(url[1])
         response.raise_for_status()
