@@ -111,19 +111,17 @@ def checks_url(url_id):
         response = requests.get(url[1])
         print(response.raise_for_status())
         response.raise_for_status()
-            
         soup = BeautifulSoup(response.content, 'html.parser')
         h1 = soup.find('h1').text if soup.find('h1') else ''
         title = soup.find('title').text if soup.find('title') else ''
         description_tag = soup.find('meta', attrs={'name': 'description'})
         description_content = description_tag['content'] if description_tag else ''  # noqa: E501
-
         today = date.today()
         cur.execute('INSERT INTO url_checks (url_id, status_code, h1, title, description, created_at) VALUES (%s, %s, %s, %s, %s, %s)', (url_id, response.status_code, h1, title, description_content, today))  # noqa: E501
         conn.commit()
         flash('Страница успешно проверена', 'success')
         return redirect(url_for('show_url', url_id=url_id))
-    except Exception as e:
+    except Exception:
         flash('Произошла ошибка при проверке', 'error')
         return redirect(url_for('show_url', url_id=url_id))
     finally:
