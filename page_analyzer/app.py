@@ -103,7 +103,7 @@ def checks_url(url_id):
         cur.execute('SELECT * FROM urls WHERE id = %s', (url_id,))
         url = cur.fetchone()
         if url is None:
-            flash('URL не найден!', 'error')
+            flash('Некорректный URL', 'error')
             return redirect(url_for('urls'))
         response = requests.get(url[1])
         response.raise_for_status()
