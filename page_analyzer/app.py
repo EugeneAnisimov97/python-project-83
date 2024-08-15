@@ -113,6 +113,9 @@ def checks_url(url_id):
             title = soup.find('title').text if soup.find('title') else ''
             description_tag = soup.find('meta', attrs={'name': 'description'})
             description_content = description_tag['content'] if description_tag else ''  # noqa: E501
+        else:
+            flash('Произошла ошибка при проверке')
+            return redirect(url_for('show_url', url_id=url_id))
         today = date.today()
         cur.execute('INSERT INTO url_checks (url_id, status_code, h1, title, description, created_at) VALUES (%s, %s, %s, %s, %s, %s)', (url_id, response.status_code, h1, title, description_content, today))  # noqa: E501
         conn.commit()
