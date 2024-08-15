@@ -109,24 +109,23 @@ def checks_url(url_id):
             flash('URL не найден!', 'error')
             return redirect(url_for('urls'))
         response = requests.get(url[1])
+        print(response.raise_for_status())
         response.raise_for_status()
-        if response.status_code == 200:
-            soup = BeautifulSoup(response.content, 'html.parser')
-            h1 = soup.find('h1').text if soup.find('h1') else ''
-            title = soup.find('title').text if soup.find('title') else ''
-            description_tag = soup.find('meta', attrs={'name': 'description'})
-            description_content = description_tag['content'] if description_tag else ''  # noqa: E501
-        else:
-            flash('Произошла ошибка при проверке', 'error')
-            return redirect(url_for('show_url', url_id=url_id))
+            
+        soup = BeautifulSoup(response.content, 'html.parser')
+        h1 = soup.find('h1').text if soup.find('h1') else ''
+        title = soup.find('title').text if soup.find('title') else ''
+        description_tag = soup.find('meta', attrs={'name': 'description'})
+        description_content = description_tag['content'] if description_tag else ''  # noqa: E501
+
         today = date.today()
         cur.execute('INSERT INTO url_checks (url_id, status_code, h1, title, description, created_at) VALUES (%s, %s, %s, %s, %s, %s)', (url_id, response.status_code, h1, title, description_content, today))  # noqa: E501
         conn.commit()
         flash('Страница успешно проверена', 'success')
         return redirect(url_for('show_url', url_id=url_id))
     except Exception as e:
-        flash(f'Ошибка: {str(e)}', 'error')
-        return redirect(url_for('main'))
+        flash('Произошла ошибка при проверке', 'error')
+        return redirect(url_for('show_url', url_id=url_id))
     finally:
         cur.close()
         conn.close()
