@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, flash, get
 from dotenv import load_dotenv
 from datetime import date
 from bs4 import BeautifulSoup
+from urllib.parse import urlparse
 import os
 import psycopg2
 import validators
@@ -30,16 +31,18 @@ def post_main():
     if not url or len(url) > 255 or not validators.url(url):
         flash('Некорректный URL', 'error')
         return render_template('index.html'), 422
+    parsed_url = urlparse(url)
+    base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
     conn = get_db_connection()
     cur = conn.cursor()
     try:
-        cur.execute('SELECT * FROM urls WHERE name = %s', (url,))
+        cur.execute('SELECT * FROM urls WHERE name = %s', (base_url,))
         already_added_url = cur.fetchone()
         if already_added_url:
             flash('Страница уже существует', 'info')
             return redirect(url_for('show_url', url_id=already_added_url[0]))
         today = date.today()
-        cur.execute('INSERT INTO urls (name, created_at) VALUES (%s, %s) RETURNING id', (url, today))  # noqa: E501
+        cur.execute('INSERT INTO urls (name, created_at) VALUES (%s, %s) RETURNING id', (base_url, today))  # noqa: E501
         added_url = cur.fetchone()[0]
         conn.commit()
         flash('Страница успешно добавлена', 'success')
