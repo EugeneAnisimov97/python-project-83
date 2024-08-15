@@ -1,4 +1,5 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, get_flashed_messages  # noqa: E501
+from flask import Flask, render_template, request, redirect, url_for, flash, get_flashed_messages
+import requests  # noqa: E501
 from dotenv import load_dotenv
 from datetime import date
 import os
@@ -59,7 +60,7 @@ def urls():
         check_urls = {}
         for url in urls:
             url_id = url[0]
-            cur.execute('select * from url_checks where url_id = %s ORDER BY created_at DESC LIMIT 1', (url_id,))  # noqa: E501
+            cur.execute('select * from url_checks where url_id = %s ORDER BY id DESC LIMIT 1', (url_id,))  # noqa: E501
             last_check = cur.fetchone()
             check_urls[url_id] = last_check
         return render_template('urls.html', urls=urls, check_urls=check_urls)
@@ -76,12 +77,12 @@ def show_url(url_id):
     conn = get_db_connection()
     cur = conn.cursor()
     try:
-        cur.execute('SELECT * FROM urls WHERE id = %s', (url_id,))
+        cur.execute('SELECT * FROM urls WHERE id = %s ORDER BY id DESC', (url_id,))
         url = cur.fetchone()
         if url is None:
             flash('Этот URL не найден.', 'error')
             return redirect(url_for('urls'))
-        cur.execute('select * from url_checks where url_id = %s ORDER BY created_at DESC', (url_id,))  # noqa: E501
+        cur.execute('select * from url_checks where url_id = %s ORDER BY id DESC', (url_id,))  # noqa: E501
         check_url = cur.fetchall()
         return render_template('show_url.html', url=url, checks=check_url)
     except Exception as e:
@@ -102,8 +103,10 @@ def checks_url(url_id):
         if url is None:
             flash('URL не найден!', 'error')
             return redirect(url_for('urls'))
+        response = requests.get(url[1])
+        response.raise_for_status()
         today = date.today()
-        cur.execute('INSERT INTO url_checks (url_id, created_at) VALUES (%s, %s)', (url_id, today))  # noqa: E501
+        cur.execute('INSERT INTO url_checks (url_id, status_code, created_at) VALUES (%s, %s, %s)', (url_id,response.status_code, today))  # noqa: E501
         conn.commit()
         flash('Страница успешно проверена', 'success')
         return redirect(url_for('show_url', url_id=url_id))
