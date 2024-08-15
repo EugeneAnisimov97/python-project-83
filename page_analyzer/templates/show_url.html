@@ -23,7 +23,12 @@
   {% if messages %}
 
       {% for category, message in messages %}
-      <div class="alert alert-success" role="alert">{{message}}</div>
+      {% if message == 'Страница успешно добавлена' %}
+        <div class="alert alert-success" role="alert">{{message}}</div>
+        {% endif %}
+        {% if message == 'Страница уже существует' %}
+        <div class="alert alert-info" role="alert">{{message}}</div>
+        {% endif %}
       {% endfor %}
   {% endif %}
 {% endwith %}
