@@ -1,4 +1,5 @@
 from dotenv import load_dotenv
+from psycopg2.extras import NamedTupleCursor
 import psycopg2
 import os
 
