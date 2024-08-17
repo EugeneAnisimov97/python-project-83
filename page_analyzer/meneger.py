@@ -1,5 +1,5 @@
 from dotenv import load_dotenv
-# from psycopg2.extras import NamedTupleCursor
+from psycopg2.extras import NamedTupleCursor
 import psycopg2
 import os
 
@@ -16,7 +16,7 @@ def get_db_connection():
 class DatabaseConnection:
     def __init__(self):
         self.conn = get_db_connection()
-        self.cur = self.conn.cursor()
+        self.cur = self.conn.cursor(cursor_factory=NamedTupleCursor)
 
     def __enter__(self):
         return self.cur

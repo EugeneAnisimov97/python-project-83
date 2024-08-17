@@ -7,7 +7,7 @@ today = date.today()
 
 def get_all_urls():
     with DatabaseConnection() as cur:
-        cur.execute('SELECT * FROM urls ORDER BY created_at DESC')
+        cur.execute('SELECT * FROM urls ORDER BY id DESC')
         return cur.fetchall()
 
 
@@ -27,7 +27,7 @@ def add_url(base_url, today=today):
     with DatabaseConnection() as cur:
         cur.execute('INSERT INTO urls (name, created_at) VALUES (%s, %s) RETURNING id', (base_url, today))  # noqa: E501
         cur.connection.commit()
-        return cur.fetchone()[0]
+        return cur.fetchone().id
 
 
 def filling_data_url(url_id, status_code, h1, title, description_content, today=today):  # noqa: E501

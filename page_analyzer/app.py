@@ -38,12 +38,12 @@ def post_main():
 @app.route('/urls')
 def urls():
     urls = get_all_urls()
-    check_urls = {}
+    check = {}
     for url in urls:
-        url_id = url[0]
+        url_id = url.id
         last_check = get_last_check(url_id)
-        check_urls[url_id] = last_check
-    return render_template('urls.html', urls=urls, check_urls=check_urls)
+        check[url_id] = last_check
+    return render_template('urls.html', urls=urls, check_urls=check)
 
 
 @app.route('/urls/<int:url_id>')
@@ -63,7 +63,7 @@ def checks_url(url_id):
         if url is None:
             flash('URL не найден!', 'danger')
             return redirect(url_for('urls'))
-        response = requests.get(url[1])
+        response = requests.get(url.name)
         response.raise_for_status()
         soup = BeautifulSoup(response.content, 'html.parser')
         h1 = soup.find('h1').text if soup.find('h1') else ''

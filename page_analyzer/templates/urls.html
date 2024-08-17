@@ -18,17 +18,10 @@
     <tbody>
       
         <tr>
-          <td>{{url[0]}}</td>
-          <td>
-            <a href="/urls/{{url[0]}}">
-              {{url[1]}}
-            </a>
-          </td>
-          
-          <td>{{check_urls[url[0]][6]}}</td>
-          
-          
-          <td>{{check_urls[url[0]][2]}}</td>
+          <td>{{url.id}}</td>
+          <td><a href="/urls/{{url.id}}">{{url.name}}</a></td>
+          <td>{{check_urls[url.id].created_at}}</td>
+          <td>{{check_urls[url.id].status_code}}</td>
           
         </tr>
       
