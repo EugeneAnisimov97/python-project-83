@@ -1,5 +1,5 @@
 from datetime import date
-from meneger import DatabaseConnection
+from page_analyzer.meneger import DatabaseConnection
 
 
 today = date.today()

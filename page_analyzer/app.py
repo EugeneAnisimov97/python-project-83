@@ -2,10 +2,10 @@ from flask import Flask, render_template, request, redirect, url_for, flash, get
 from dotenv import load_dotenv
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse
-import os
-from validator import validate
-from database_queries import get_all_urls, get_last_check, get_existing_url, add_url, filling_data_url, search_url, get_all_check  # noqa: E501
+from page_analyzer.validator import validate
+from page_analyzer.database_queries import get_all_urls, get_last_check, get_existing_url, add_url, filling_data_url, search_url, get_all_check  # noqa: E501
 import requests
+import os
 
 load_dotenv()
 app = Flask(__name__)
