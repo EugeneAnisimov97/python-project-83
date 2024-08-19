@@ -1,6 +1,6 @@
 <!DOCTYPE html>
-<html lang="en">
-    {% include 'header.html' %}
+{% extends "base.html" %}
+{% block main %}
   <main class="flex-grow-1">
     <div class="container-lg mt-3">
       <h1>Сайты</h1>  
@@ -16,24 +16,15 @@
     </thead>
     {% for url in urls %}
     <tbody>
-      
         <tr>
           <td>{{url.id}}</td>
           <td><a href="/urls/{{url.id}}">{{url.name}}</a></td>
           <td>{{check_urls[url.id].created_at}}</td>
           <td>{{check_urls[url.id].status_code}}</td>
-          
         </tr>
-      
     </tbody>
     {% endfor %}
   </table>
-</div>
-
-    </div>
+</div></div>
   </main>
-  {% include 'footer.html' %}
-
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
-  
-</body></html>
+  {% endblock %}
