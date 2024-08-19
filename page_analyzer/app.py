@@ -1,9 +1,24 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, get_flashed_messages  # noqa: E501
+from flask import (
+    Flask,
+    render_template,
+    request,
+    redirect,
+    url_for,
+    flash,
+    get_flashed_messages
+)
 from dotenv import load_dotenv
-from bs4 import BeautifulSoup
-from urllib.parse import urlparse
 from page_analyzer.validator import validate
-from page_analyzer.database_queries import get_all_urls, get_last_check, get_existing_url, add_url, filling_data_url, search_url, get_all_check  # noqa: E501
+from page_analyzer.database_queries import (
+    get_all_urls,
+    get_last_check,
+    get_existing_url,
+    add_url,
+    filling_data_url,
+    search_url,
+    get_all_check
+)
+from page_analyzer.parser import get_url_parsed, parsing_html
 import requests
 import os
 
@@ -24,8 +39,7 @@ def post_main():
     if validate(url):
         flash('Некорректный URL', 'danger')
         return render_template('index.html'), 422
-    parsed_url = urlparse(url)
-    base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
+    base_url = get_url_parsed(url)
     already_added_url = get_existing_url(base_url)
     if already_added_url:
         flash('Страница уже существует', 'info')
@@ -65,12 +79,8 @@ def checks_url(url_id):
             return redirect(url_for('urls'))
         response = requests.get(url.name)
         response.raise_for_status()
-        soup = BeautifulSoup(response.content, 'html.parser')
-        h1 = soup.find('h1').text if soup.find('h1') else ''
-        title = soup.find('title').text if soup.find('title') else ''
-        description_tag = soup.find('meta', attrs={'name': 'description'})
-        description_content = description_tag['content'] if description_tag else ''  # noqa: E501
-        filling_data_url(url_id, response.status_code, h1, title, description_content)  # noqa: E501
+        h1, title, description = parsing_html(response)
+        filling_data_url(url_id, response.status_code, h1, title, description)
         flash('Страница успешно проверена', 'success')
         return redirect(url_for('show_url', url_id=url_id))
     except Exception:
