@@ -10,8 +10,8 @@ def get_url_parsed(url):
 
 def validate(url):
     if not validators.url(url):
-        return f'Некорректный URL'
+        return 'Некорректный URL'
     elif len(url) > 255:
-        return f'URL слишком длинный'
+        return 'URL слишком длинный'
     else:
         return False

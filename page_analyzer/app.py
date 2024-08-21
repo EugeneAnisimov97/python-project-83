@@ -96,7 +96,8 @@ def checks_url(url_id):
 @app.route('/not-found')
 def not_found():
     """Handler for displaying a page when an error occurs"""
-    return render_template('not_found.html'),404
+    return render_template('not_found.html'), 404
+
 
 if __name__ == '__main__':
     app.run(debug=True)
