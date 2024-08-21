@@ -8,17 +8,16 @@ from flask import (
     get_flashed_messages
 )
 from dotenv import load_dotenv
-from page_analyzer.validator import validate
-from page_analyzer.database_queries import (
-    get_all_urls,
+from page_analyzer.validator import validate, get_url_parsed
+from page_analyzer.database import (
     get_last_check,
     get_existing_url,
-    add_url,
+    insert_url,
     filling_data_url,
-    search_url,
-    get_all_check
+    get_url_by_id,
+    get_all_checks
 )
-from page_analyzer.parser import get_url_parsed, parsing_html
+from page_analyzer.parser import parsing_html
 import requests
 import os
 
@@ -28,13 +27,15 @@ app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
 
 
 @app.route('/')
-def main():
+def index():
+    """Home page route handler"""
     messages = get_flashed_messages(with_categories=True)
     return render_template('index.html', messages=messages)
 
 
 @app.post('/urls')
-def post_main():
+def create_url():
+    """handler for adding a page to the database"""
     url = request.form.get('url')
     if validate(url):
         flash('Некорректный URL', 'danger')
@@ -43,50 +44,59 @@ def post_main():
     already_added_url = get_existing_url(base_url)
     if already_added_url:
         flash('Страница уже существует', 'info')
-        return redirect(url_for('show_url', url_id=already_added_url[0]))
-    added_url = add_url(base_url)
+        return redirect(url_for('show_url', url_id=already_added_url.id))
+    added_url = insert_url(base_url)
     flash('Страница успешно добавлена', 'success')
     return redirect(url_for('show_url', url_id=added_url))
 
 
 @app.route('/urls')
 def urls():
-    urls = get_all_urls()
-    check = {}
-    for url in urls:
-        url_id = url.id
-        last_check = get_last_check(url_id)
-        check[url_id] = last_check
-    return render_template('urls.html', urls=urls, check_urls=check)
+    """display handler added to the page database"""
+    last_check = get_last_check()
+    return render_template('urls.html', check_urls=last_check)
 
 
 @app.route('/urls/<int:url_id>')
 def show_url(url_id):
-    url = search_url(url_id)
+    """A handler for displaying information about a specific URL"""
+    url = get_url_by_id(url_id)
     if url is None:
         flash('Этот URL не найден.', 'danger')
-        return redirect(url_for('urls'))
-    check_url = get_all_check(url_id)
+        return redirect(url_for('not_found'))
+    check_url = get_all_checks(url_id)
     return render_template('show_url.html', url=url, checks=check_url)
 
 
 @app.post('/urls/<int:url_id>/checks')
 def checks_url(url_id):
+    """A handler for displaying a check about a specific URL"""
+    url = get_url_by_id(url_id)
+    if url is None:
+        flash('URL не найден!', 'danger')
+        return redirect(url_for('not_found'))
     try:
-        url = search_url(url_id)
-        if url is None:
-            flash('URL не найден!', 'danger')
-            return redirect(url_for('urls'))
         response = requests.get(url.name)
         response.raise_for_status()
-        h1, title, description = parsing_html(response)
-        filling_data_url(url_id, response.status_code, h1, title, description)
-        flash('Страница успешно проверена', 'success')
-        return redirect(url_for('show_url', url_id=url_id))
-    except Exception:
+    except requests.RequestException:
         flash('Произошла ошибка при проверке', 'danger')
         return redirect(url_for('show_url', url_id=url_id))
+    parsed_html = parsing_html(response)
+    filling_data_url(
+        url_id,
+        response.status_code,
+        parsed_html['h1'],
+        parsed_html['title'],
+        parsed_html['description']
+    )
+    flash('Страница успешно проверена', 'success')
+    return redirect(url_for('show_url', url_id=url_id))
 
+
+@app.route('/not-found')
+def not_found():
+    """Handler for displaying a page when an error occurs"""
+    return render_template('not_found.html'),404
 
 if __name__ == '__main__':
     app.run(debug=True)

@@ -1,7 +1,5 @@
-<!DOCTYPE html>
 {% extends "base.html" %}
-{% block main %}
-  <main class="flex-grow-1">
+{% block div %}
     <div class="container-lg mt-3">
       <h1>Сайты</h1>  
 <div class="table-responsive">
@@ -14,17 +12,16 @@
       <th>Код ответа</th>
     </tr>
     </thead>
-    {% for url in urls %}
+    {% for url in check_urls %}
     <tbody>
         <tr>
           <td>{{url.id}}</td>
-          <td><a href="/urls/{{url.id}}">{{url.name}}</a></td>
-          <td>{{check_urls[url.id].created_at}}</td>
-          <td>{{check_urls[url.id].status_code}}</td>
+          <td><a href="{{url_for('show_url', url_id=url.id)}}">{{url.name}}</a></td>
+          <td>{{url.last_check if url.last_check else ''}}</td>
+          <td>{{url.status_code if url.status_code else ''}}</td>
         </tr>
     </tbody>
     {% endfor %}
   </table>
 </div></div>
-  </main>
   {% endblock %}
