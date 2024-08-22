@@ -1,7 +1,7 @@
 from bs4 import BeautifulSoup
 
 
-def parsing_html(response):
+def parse_html(response):
     parsed_html = {}
     soup = BeautifulSoup(response.content, 'html.parser')
     parsed_html['h1'] = soup.find('h1').text if soup.find('h1') else ''

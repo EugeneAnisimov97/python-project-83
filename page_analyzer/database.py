@@ -51,27 +51,31 @@ def get_existing_url(base_url):
         return cur.fetchone()
 
 
-def insert_url(base_url):
-    now = datetime.now()
-    formatted_now = now.strftime("%Y-%m-%d %H:%M:%S")
+def insert_new_url(base_url):
     with DatabaseConnection() as cur:
         cur.execute(
             '''INSERT INTO urls (name, created_at) VALUES (%s, %s)
-            RETURNING id''', (base_url, formatted_now)
+            RETURNING id''',
+            (base_url, datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
         )
         cur.connection.commit()
         return cur.fetchone().id
 
 
-def filling_data_url(url_id, status_code, h1, title, description):
-    now = datetime.now()
-    formatted_now = now.strftime("%Y-%m-%d %H:%M:%S")
+def insert_url_check_data(url_id, status_code, parsed_html):
     with DatabaseConnection() as cur:
         cur.execute(
             '''INSERT INTO url_checks
             (url_id, status_code, h1, title, description, created_at)
             VALUES (%s, %s, %s, %s, %s, %s)''',
-            (url_id, status_code, h1, title, description, formatted_now))
+            (
+                url_id,
+                status_code,
+                parsed_html.get('h1', ''),
+                parsed_html.get('title', ''),
+                parsed_html.get('description', ''),
+                datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            ))
         cur.connection.commit()
 
 
